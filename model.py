@@ -9,7 +9,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.svm import SVC
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score, confusion_matrix, clasclassification_report
 import matplotlib.pyplot as plt
 import seaborn as sns
 
@@ -30,10 +30,8 @@ X_train, X_test, y_train, y_test = train_test_split(X_transformed, y, test_size=
 # Define evaluation function
 def evaluate_model(model, X_test, y_test):
     y_pred = model.predict(X_test)
-    print(f"Accuracy: {accuracy_score(y_test, y_pred):.4f}")
-    print(f"Precision: {precision_score(y_test, y_pred):.4f}")
-    print(f"Recall: {recall_score(y_test, y_pred):.4f}")
-    print(f"F1-score: {f1_score(y_test, y_pred):.4f}\n")
+    print(f"\nModel: {type(model).__name__}")
+    print("Classification Report:\n", clasclassification_report(y_test, y_pred))
     
     # Confusion matrix
     cm = confusion_matrix(y_test, y_pred)
@@ -43,56 +41,35 @@ def evaluate_model(model, X_test, y_test):
     plt.xlabel("Predicted")
     plt.show()
 
-# Naive Bayes Model
-print("Naive Bayes Model Results:")
-nb_model = MultinomialNB()
-nb_model.fit(X_train, y_train)
-evaluate_model(nb_model, X_test, y_test)
+    return {
+        "Accuracy": accuracy_score(y_test, y_pred),
+        "Precision": accuracy_score(y_test, y_pred),
+        "Recall": accuracy_score(y_test, y_pred),
+        "F1-score": accuracy_score(y_test, y_pred)
+    }
 
-# SVM Model
-print("SVM Model Results:")
-svm_model = SVC(kernel='linear')
-svm_model.fit(X_train, y_train)
-evaluate_model(svm_model, X_test, y_test)
 
-# Random Forest Model
-print("Random Forest Model Results:")
-rf_model = RandomForestClassifier(n_estimators=100, random_state=42)
-rf_model.fit(X_train, y_train)
-evaluate_model(rf_model, X_test, y_test)
-
-# Compare models
-results = {
-    "Model": ["Naive Bayes", "SVM", "Random Forest"],
-    "Accuracy": [
-        accuracy_score(y_test, nb_model.predict(X_test)),
-        accuracy_score(y_test, svm_model.predict(X_test)),
-        accuracy_score(y_test, rf_model.predict(X_test))
-    ],
-    "Precision": [
-        precision_score(y_test, nb_model.predict(X_test)),
-        precision_score(y_test, svm_model.predict(X_test)),
-        precision_score(y_test, rf_model.predict(X_test))
-    ],
-    "Recall": [
-        recall_score(y_test, nb_model.predict(X_test)),
-        recall_score(y_test, svm_model.predict(X_test)),
-        recall_score(y_test, rf_model.predict(X_test))
-    ],
-    "F1-score": [
-        f1_score(y_test, nb_model.predict(X_test)),
-        f1_score(y_test, svm_model.predict(X_test)),
-        f1_score(y_test, rf_model.predict(X_test))
-    ]
+# Initialize models
+models = {
+    "Naive Bayes": MultinomialNB(),
+    "SVM": SVC(kernel='linear'),
+    "Random Forest": RandomForestClassifier(n_estimators=200, random_state=43, class_weight='balanced')
 }
 
-# Create DataFrame for Results
-results_df = pd.DataFrame(results)
+# Train and evaluate models
+results = {}
+for name, model in models.items():
+    model.fit(X_train, y_train)
+    results[name] = evaluate_model(model, X_train, y_train)
+
+# Convert results to DataFrame:
+results_df = pd.DataFrame(results).T
 print(results_df)
 
 # Visualization
-results_df.set_index("Model").plot(kind="bar", figsize=(10, 6))
-plt.title("Model Comparison")
-plt.ylabel("Performance Metrics")
+plt.figure(figsize=(10, 6))
+results_df.plot(kind="bar", figsize=(10, 6), colormap='viridis')
+plt.title("Spam Detection Model Comparison")
 plt.xticks(rotation=0)
+plt.legend(loc='lower right')
 plt.show()
